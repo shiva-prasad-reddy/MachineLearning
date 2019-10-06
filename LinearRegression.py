@@ -1,104 +1,106 @@
-
 import numpy as np
 from matplotlib import pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import style
+from mpl_toolkits.mplot3d import Axes3D
 style.use("ggplot")
 
+def fit(x,y):
+    global bias, weight
+    x = np.array(x)
+    
+    #x = x / np.max(x) --- feature scaling
+    
+    y = np.array(y)
+    h = bias + (weight * x)
+    
+    #cost
+    cost = ((h - y) ** 2).sum() / (2*x.size)
 
-class LinearRegression():
-	"""Univariate Linear Reression"""
-
-	p0 = []
-	p1 = []
-	j = []
-
-	def __init__(self, x_train, y_train, param_0 = 0.0, param_1 = 0.0):
-		self.X = np.array(x_train)
-		self.Y = np.array(y_train)
-
-		self.M = self.X.size
-
-		self.param_0 = param_0
-		self.param_1 = param_1
-
-
-	def fit(self):
-		self.H = self.param_0 + (self.param_1 * self.X)
-		plt.plot(self.X, self.H, linewidth='0.5')
-
-
-	def cost(self):
-		self.J = np.sum((self.H - self.Y) ** 2) / (2 * self.M)
-		return self.J
-
-	def minimizeCost(self, alpha=0.05):
-		"""alpha -- learning rate"""
-		
-		LinearRegression.p0.append(self.param_0)
-		LinearRegression.p1.append(self.param_1)
-		LinearRegression.j.append(self.J)
-
-		der_param_0 = np.sum((self.H - self.Y)) / self.M
-		der_param_1 = np.dot((self.H - self.Y), self.X) / self.M
-		
-		#correct simultaneous update
-		temp_0 = self.param_0 - (alpha * der_param_0)
-		temp_1 = self.param_1 - (alpha * der_param_1)
-		
-		self.param_0 = temp_0
-		self.param_1 = temp_1
-
-	def graph(self):
-		plt.scatter(self.X, self.Y, color='r', marker='x')
-		plt.xlabel('X')
-		plt.ylabel('H')
-		plt.title("Linear Reression")
-		#plt.legend()
-		plt.show()
+    #gradient descent
+    derivative_wrt_bias = (h - y).sum() / x.size
+    derivative_wrt_weight = np.dot((h - y), x) / x.size
+    
+    #simultaneous updates
+    bias = bias - (learning_rate * derivative_wrt_bias)
+    weight = weight - (learning_rate *  derivative_wrt_weight)
+    
+    return cost
 
 
-	def predict(self, test_x):
-		test_x = np.array(test_x)
-		output = self.param_0 + (self.param_1 * test_x)
-		return output
-
-
-	def graphCost(self):
+def predict(x):
+    global bias, weight
+    x = np.array(x)
+    
+    #x = x / 31 --- feature scaling
+    h = bias + (weight * x)
+    
+    return h
+    
+def graphCost(cost, bias, weight):
 		fig = plt.figure()
 		axes = fig.add_subplot(111, projection='3d')
 		
-		LinearRegression.p0 = np.array(LinearRegression.p0)
-		LinearRegression.p1 = np.array(LinearRegression.p1)
-		LinearRegression.j = np.array(LinearRegression.j)
+		bias = np.array(bias)
+		weight = np.array(weight)
+		cost= np.array(cost)
 
-		x,y = np.meshgrid(LinearRegression.p0, LinearRegression.p1)
-		z = LinearRegression.j.reshape(x.shape[0],1)
+		x,y = np.meshgrid(bias, weight)
+		z = cost.reshape(x.shape[0],1)
 		
 		axes.plot_surface(x, y, z, cmap='viridis')
-		axes.set_xlabel("param_0")
-		axes.set_ylabel("param_1")
-		axes.set_zlabel("J(param_0, param_1)")
+		axes.set_xlabel("bias")
+		axes.set_ylabel("weight")
+		axes.set_zlabel("cost")
 
 		plt.show()
 
+##############################################################################################
+'''
+# Overshoot because the learning rate is too high
+x = [3,21,31]
+y = [3,21,31]
 
+bias = 0.0
+weight = 0.0
+learning_rate = 0.05
+cost = []
+b = []
+w = []
+for i in range(150):
+    #print("cost =",fit(x,y),"| bias =", bias, "| weight =", weight)
+    cost.append(fit(x,y))
+    b.append(bias)
+    w.append(weight)
+    
+plt.plot(list(range(1,151)),cost)
+plt.xlabel("iterations")
+plt.ylabel("cost")
+plt.title("Overshooting the minimum at learning rate --> 0.05")
+predict([1,2,3])
+graphCost(cost, b, w)
+'''
+#############################################################################################
 
+x = [3,21,31]
+y = [3,21,31]
 
+bias = 0.0
+weight = 0.0
+learning_rate = 0.0005
+cost = []
+b = []
+w = []
+for i in range(100):
+    #print("cost =",fit(x,y),"| bias =", bias, "| weight =", weight)
+    cost.append(fit(x,y))
+    b.append(bias)
+    w.append(weight)
+    
+plt.plot(list(range(1,101)),cost)
+plt.xlabel("iterations")
+plt.ylabel("cost")
+plt.title("Lower learning rate --> 0.0005")
+predict([1,2,3])
+graphCost(cost, b, w)
 
-
-x = [1,2,3]
-y = [1,2,3]
-
-LR = LinearRegression(x,y)
-
-for i in range(500):
-	LR.fit()
-	cost = LR.cost()
-	print(cost)
-	LR.minimizeCost()
-
-print("Prediction ---> \n", LR.predict([1,2,3,4,5,6]))
-LR.graphCost()
-
-
+###################################################
